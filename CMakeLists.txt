@@ -7,6 +7,7 @@ SET(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 
 set(${PROJECT_NAME}_SOURCES
     src/main.cpp
+    src/Parser.cpp
 )
 
 include_directories(thirdparty/lexertl)

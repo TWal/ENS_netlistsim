@@ -371,4 +371,48 @@ void printNetlist(const Netlist& ns) {
     }
 }
 
+void typeCheck(const Netlist& ns) {
+    //TODO: check that no variables are assigned twice
+    //TODO: check that all outputs are defined?
+    for(const Command& c : ns.commands) {
+        auto nappe = [&](size_t id) {
+            return ns.nappeSizes[c.args[id]];
+        };
+        size_t varNappe = ns.nappeSizes[c.varId];
+        switch(c.op) {
+            case OP_OR:
+            case OP_XOR:
+            case OP_AND:
+            case OP_NAND:
+                //TODO: do bitwise operations for nappes?
+                assert(varNappe == 0 && varNappe == nappe(0) && nappe(0) == nappe(1));
+                break;
+            case OP_REG:
+                //TODO: do bitwise operations for nappes?
+                assert(varNappe == 0 && varNappe == nappe(0));
+                break;
+            case OP_RAM:
+                //TODO
+                break;
+            case OP_ROM:
+                //TODO
+                break;
+            case OP_SELECT:
+                assert(varNappe == 0 && nappe(1) > c.args[0]);
+                break;
+            case OP_SLICE:
+                //TODO: see what is inclusive or exclusive
+                assert(varNappe == c.args[1] - c.args[0] && nappe(2) > c.args[1]);
+                break;
+            case OP_CONCAT:
+                assert(varNappe == nappe(0)+nappe(1) && nappe(0) > 0 && nappe(1) > 0);
+                break;
+            case OP_NOP:
+            default:
+                assert(false);
+                break;
+        };
+    }
+}
+
 }

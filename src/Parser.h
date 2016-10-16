@@ -30,6 +30,7 @@ namespace Parser {
 
     Netlist parse(const std::string& s);
     void printNetlist(const Netlist& ns);
+    void typeCheck(const Netlist& ns);
 
 }
 

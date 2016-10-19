@@ -401,8 +401,7 @@ void typeCheck(const Netlist& ns) {
                 assert(varNappe == 0 && nappe(1) > c.args[0]);
                 break;
             case OP_SLICE:
-                //TODO: see what is inclusive or exclusive
-                assert(varNappe == c.args[1] - c.args[0] && nappe(2) > c.args[1]);
+                assert(varNappe == c.args[1] - c.args[0] + 1 && nappe(2) > c.args[1]);
                 break;
             case OP_CONCAT:
                 assert(varNappe == nappe(0)+nappe(1) && nappe(0) > 0 && nappe(1) > 0);

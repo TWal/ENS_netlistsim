@@ -6,10 +6,12 @@
 class Simulator {
     public:
         Simulator(const Netlist& ns);
-        void simulate(const std::vector<size_t>& in);
-        std::vector<size_t> getOutput() const;
+        virtual void simulate(const std::vector<size_t>& in) = 0;
+        inline size_t getOutput(size_t i) {
+            return _vars[_ns.output[i]];
+        }
 
-    private:
+    protected:
         Netlist _ns;
         std::vector<size_t> _vars;
 };

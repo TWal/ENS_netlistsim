@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 enum Operation {
-    OP_OR, OP_XOR, OP_AND, OP_NAND,
+    OP_OR, OP_XOR, OP_AND, OP_NAND, OP_NOT,
     OP_REG, OP_RAM, OP_ROM,
     OP_SELECT, OP_SLICE, OP_CONCAT,
     OP_NOP

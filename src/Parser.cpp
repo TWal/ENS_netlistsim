@@ -8,7 +8,7 @@ namespace Parser {
 Netlist parse(const std::string& s) {
     enum TOKENS {
         SINPUT=1, SOUTPUT, SVAR, SIN,
-        OOR, OXOR, OAND, ONAND,
+        OOR, OXOR, OAND, ONAND, ONOT,
         MREG, MRAM, MROM,
         NSELECT, NSLICE, NCONCAT,
         VARNAME, NUMBER,
@@ -25,6 +25,7 @@ Netlist parse(const std::string& s) {
     rules.push("XOR", OXOR); //var var
     rules.push("AND", OAND); //var var
     rules.push("NAND", ONAND); //var var
+    rules.push("NOT", ONOT); //var var
     rules.push("REG", MREG); //var
     rules.push("RAM", MRAM); //int int var var var var
     rules.push("ROM", MROM);
@@ -69,6 +70,7 @@ Netlist parse(const std::string& s) {
             case OXOR:
             case OAND:
             case ONAND:
+            case ONOT:
             case MREG:
             case MRAM:
             case MROM:
@@ -126,12 +128,22 @@ Netlist parse(const std::string& s) {
 
     Netlist ns;
 
-    auto getId = [&](const std::string& name) {
+    auto addGetId = [&](const std::string& name) {
         auto it = ns.nameToId.find(name);
         if(it == ns.nameToId.end()) {
             ns.nameToId[name] = ns.idToName.size();
             ns.idToName.push_back(name);
             return ns.idToName.size()-1;
+        } else {
+            return it->second;
+        }
+    };
+
+    auto getId = [&](const std::string& name) {
+        auto it = ns.nameToId.find(name);
+        if(it == ns.nameToId.end()) {
+            fprintf(stderr, "Unknown variable name: %s\n", name.c_str());
+            exit(1);
         } else {
             return it->second;
         }
@@ -147,6 +159,8 @@ Netlist parse(const std::string& s) {
                 return OP_AND;
             case ONAND:
                 return OP_NAND;
+            case ONOT:
+                return OP_NOT;
             case MREG:
                 return OP_REG;
             case MRAM:
@@ -172,13 +186,13 @@ Netlist parse(const std::string& s) {
                 fprintf(stderr, "Expected variable name...\n");
                 exit(1);
             }
-            currId = getId(toktokvars[i][0].second);
+            currId = addGetId(toktokvars[i][0].second);
         } else if(toktokvars[i].size() == 3) {
             if(toktokvars[i][0].first != VARNAME || toktokvars[i][1].first != SEMICOLON || toktokvars[i][2].first != NUMBER) {
                 fprintf(stderr, "Bad variable format...\n");
                 exit(1);
             }
-            currId = getId(toktokvars[i][0].second);
+            currId = addGetId(toktokvars[i][0].second);
             currNappeSize = atoi(toktokvars[i][2].second.c_str());
         } else if(toktokvars[i].empty()) {
             continue;
@@ -229,6 +243,13 @@ Netlist parse(const std::string& s) {
                 }
                 currentCommand.args.push_back(getId(v[3].second));
                 currentCommand.args.push_back(getId(v[4].second));
+                break;
+            case OP_NOT:
+                if(v.size() != 4 || v[3].first != VARNAME) {
+                    fprintf(stderr, "Operation has not the right number of arguments...\n");
+                    exit(1);
+                }
+                currentCommand.args.push_back(getId(v[3].second));
                 break;
             case OP_REG:
                 if(v.size() != 4 || v[3].first != VARNAME) {
@@ -282,22 +303,21 @@ void printNetlist(const Netlist& ns) {
     printf("INPUT ");
     for(size_t i = 0; i < ns.input.size(); ++i) {
         printf("%s", ns.idToName[ns.input[i]].c_str());
-        if(i == ns.input.size()-1) {
-            printf("\n");
-        } else {
+        if(i < ns.input.size()-1) {
             printf(", ");
         }
     }
+    printf("\n");
 
     printf("OUTPUT ");
     for(size_t i = 0; i < ns.output.size(); ++i) {
         printf("%s", ns.idToName[ns.output[i]].c_str());
-        if(i == ns.output.size()-1) {
-            printf("\n");
-        } else {
+        if(i < ns.output.size()-1) {
             printf(", ");
         }
     }
+    printf("\n");
+
     printf("VAR\n\t");
     for(size_t i = 0; i < ns.idToName.size(); ++i) {
         if(ns.nappeSizes[i]) {
@@ -305,12 +325,11 @@ void printNetlist(const Netlist& ns) {
         } else {
             printf("%s", ns.idToName[i].c_str());
         }
-        if(i == ns.idToName.size()-1) {
-            printf("\n");
-        } else {
+        if(i < ns.idToName.size()-1) {
             printf(", ");
         }
     }
+    printf("\n");
 
     printf("IN\n");
 
@@ -324,6 +343,8 @@ void printNetlist(const Netlist& ns) {
                 return "AND";
             case OP_NAND:
                 return "NAND";
+            case OP_NOT:
+                return "NOT";
             case OP_REG:
                 return "REG";
             case OP_RAM:
@@ -350,6 +371,9 @@ void printNetlist(const Netlist& ns) {
             case OP_NAND:
             case OP_CONCAT:
                 printf("%s %s\n", ns.idToName[c.args[0]].c_str(), ns.idToName[c.args[1]].c_str());
+                break;
+            case OP_NOT:
+                printf("%s\n", ns.idToName[c.args[0]].c_str());
                 break;
             case OP_REG:
                 printf("%s\n", ns.idToName[c.args[0]].c_str());
@@ -386,6 +410,10 @@ void typeCheck(const Netlist& ns) {
             case OP_NAND:
                 //TODO: do bitwise operations for nappes?
                 assert(varNappe == 0 && varNappe == nappe(0) && nappe(0) == nappe(1));
+                break;
+            case OP_NOT:
+                //TODO: do bitwise operations for nappes?
+                assert(varNappe == 0 && varNappe == nappe(0));
                 break;
             case OP_REG:
                 //TODO: do bitwise operations for nappes?

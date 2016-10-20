@@ -44,6 +44,11 @@ JitSimulator::JitSimulator(const Netlist& ns) :
                 comp.not_(tmp);
                 comp.mov(varToPtr(c.varId), tmp);
                 break;
+            case OP_NOT:
+                comp.mov(tmp, varToPtr(c.args[0]));
+                comp.not_(tmp);
+                comp.mov(varToPtr(c.varId), tmp);
+                break;
             case OP_REG:
                 comp.mov(tmp, asmjit::x86::ptr(oldVars, c.args[0]*sizeof(size_t), 1));
                 comp.mov(varToPtr(c.varId), tmp);

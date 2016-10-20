@@ -22,7 +22,7 @@ std::string prog =
 	"VAR\n"
 	"_l_2, c, o\n"
 	"IN\n"
-	"c = NAND _l_2 _l_2\n"
+	"c = NOT _l_2\n"
 	"o = REG c\n"
 	"_l_2 = REG o\n"
 ;
@@ -33,7 +33,8 @@ int main() {
     //BasicSimulator sim(ns);
     JitSimulator sim(ns);
     //while(true) {
-    for(size_t i = 0; i < 10000000; ++i) {
+    for(size_t i = 0; i < 10; ++i) {
+    //for(size_t i = 0; i < 10000000; ++i) {
         std::vector<size_t> in;
         for(size_t i : ns.input) {
             if(feof(stdin)) {

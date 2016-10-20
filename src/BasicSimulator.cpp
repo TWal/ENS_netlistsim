@@ -26,6 +26,9 @@ void BasicSimulator::simulate(const std::vector<size_t>& in) {
             case OP_NAND:
                 _vars[c.varId] = ~(_vars[c.args[0]] & _vars[c.args[1]]);
                 break;
+            case OP_NOT:
+                _vars[c.varId] = ~(_vars[c.args[0]]);
+                break;
             case OP_REG:
                 _vars[c.varId] = oldVars[c.args[0]];
                 break;

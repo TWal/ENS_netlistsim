@@ -12,6 +12,9 @@ Simulator::Simulator(const Netlist& ns) :
             case OP_NAND:
                 adjList[c.varId] = {{ c.args[0], c.args[1] }};
                 break;
+            case OP_NOT:
+                adjList[c.varId] = {{ c.args[0] }};
+                break;
             case OP_REG:
                 break;
             case OP_RAM:

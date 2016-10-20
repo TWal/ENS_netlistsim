@@ -11,11 +11,11 @@ JitSimulator::JitSimulator(const Netlist& ns) :
     //assemb.setLogger(&logger);
 
     comp.addFunc(asmjit::FuncBuilder2<void, size_t*, size_t*>(asmjit::kCallConvHost));
-    asmjit::X86GpVar oldVars = comp.newIntPtr("oldVars");
     asmjit::X86GpVar vars = comp.newIntPtr("vars");
+    asmjit::X86GpVar oldVars = comp.newIntPtr("oldVars");
     asmjit::X86GpVar tmp = comp.newInt64("tmp");
-    comp.setArg(0, oldVars);
-    comp.setArg(1, vars);
+    comp.setArg(0, vars);
+    comp.setArg(1, oldVars);
 
     auto varToPtr = [&](size_t id) {
         return asmjit::x86::ptr(vars, id*sizeof(size_t), 1);
@@ -93,13 +93,8 @@ JitSimulator::~JitSimulator() {
     _runtime.release((void*)_func);
 }
 
-void JitSimulator::simulate(const std::vector<size_t>& in) {
-    std::vector<size_t> oldVars = _vars;
-    assert(_ns.input.size() == in.size());
-    for(size_t i = 0; i < in.size(); ++i) {
-        _vars[_ns.input[i]] = in[i];
-    }
-
-    _func(oldVars.data(), _vars.data());
+void JitSimulator::simulate() {
+    _func(_curVars->data(), _curOldVars->data());
+    endSimulation();
 }
 

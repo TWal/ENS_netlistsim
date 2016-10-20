@@ -17,14 +17,14 @@
 //;
 
 std::string prog =
-	"INPUT \n"
-	"OUTPUT o\n"
-	"VAR\n"
-	"_l_2, c, o\n"
-	"IN\n"
-	"c = NOT _l_2\n"
-	"o = REG c\n"
-	"_l_2 = REG o\n"
+    "INPUT \n"
+    "OUTPUT o\n"
+    "VAR\n"
+    "_l_2, c, o\n"
+    "IN\n"
+    "c = NOT _l_2\n"
+    "o = REG c\n"
+    "_l_2 = REG o\n"
 ;
 
 int main() {
@@ -35,18 +35,17 @@ int main() {
     //while(true) {
     for(size_t i = 0; i < 10; ++i) {
     //for(size_t i = 0; i < 10000000; ++i) {
-        std::vector<size_t> in;
-        for(size_t i : ns.input) {
+        for(size_t i = 0; i < ns.input.size(); ++i) {
             if(feof(stdin)) {
                 return 0;
             }
-            printf("%s = ", ns.idToName[i].c_str());
+            printf("%s = ", ns.idToName[ns.input[i]].c_str());
             fflush(stdout);
             size_t cur;
             scanf("%d", &cur);
-            in.push_back(cur);
+            sim.setInput(i, cur);
         }
-        sim.simulate(in);
+        sim.simulate();
         for(size_t i = 0; i < ns.output.size(); ++i) {
             printf("%s = %d\n", ns.idToName[ns.output[i]].c_str(), sim.getOutput(i));
         }

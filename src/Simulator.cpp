@@ -2,7 +2,7 @@
 #include <functional>
 
 Simulator::Simulator(const Netlist& ns) :
-    _ns(ns), _vars(ns.idToName.size(), 0) {
+    _ns(ns), _vars(ns.idToName.size(), 0), _oldVars(_vars), _curVars(&_vars), _curOldVars(&_oldVars) {
     std::vector<std::vector<size_t>> adjList(_ns.idToName.size(), std::vector<size_t>());;
     for(const Command& c : _ns.commands) {
         switch(c.op) {
@@ -75,5 +75,9 @@ Simulator::Simulator(const Netlist& ns) :
         }
     }
     _ns.commands = newCommands;
+}
+
+void Simulator::endSimulation() {
+    std::swap(_curVars, _curOldVars);
 }
 

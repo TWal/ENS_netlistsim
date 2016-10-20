@@ -8,7 +8,7 @@ class JitSimulator : public Simulator {
     public:
         JitSimulator(const Netlist& ns);
         ~JitSimulator();
-        virtual void simulate(const std::vector<size_t>& in);
+        virtual void simulate();
 
     protected:
         asmjit::JitRuntime _runtime;

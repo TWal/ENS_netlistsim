@@ -6,7 +6,7 @@
 class BasicSimulator : public Simulator {
     public:
         BasicSimulator(const Netlist& ns);
-        virtual void simulate(const std::vector<size_t>& in);
+        virtual void simulate();
 };
 
 #endif

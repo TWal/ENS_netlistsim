@@ -51,12 +51,12 @@ int main() {
             printf("%s = ", ns.idToName[ns.input[i]].c_str());
             fflush(stdout);
             size_t cur;
-            scanf("%d", &cur);
+            scanf("%lu", &cur);
             sim.setInput(i, cur);
         }
         sim.simulate();
         for(size_t i = 0; i < ns.output.size(); ++i) {
-            printf("%s = %d\n", ns.idToName[ns.output[i]].c_str(), sim.getOutput(i));
+            printf("%s = %lu\n", ns.idToName[ns.output[i]].c_str(), sim.getOutput(i));
         }
         printf("\n");
     }

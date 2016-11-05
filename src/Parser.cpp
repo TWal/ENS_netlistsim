@@ -184,7 +184,7 @@ Netlist parse(const std::string& s) {
 
     for(size_t i = 0; i < toktokvars.size(); ++i) {
         size_t currId;
-        size_t currNappeSize = 0;
+        size_t currNappeSize = 1;
         if(toktokvars[i].size() == 1) {
             if(toktokvars[i][0].first != VARNAME) {
                 fprintf(stderr, "Expected variable name...\n");
@@ -333,7 +333,7 @@ void printNetlist(const Netlist& ns) {
 
     printf("VAR\n\t");
     for(size_t i = 0; i < ns.idToName.size(); ++i) {
-        if(ns.nappeSizes[i]) {
+        if(ns.nappeSizes[i] > 1) {
             printf("%s : %d", ns.idToName[i].c_str(), ns.nappeSizes[i]);
         } else {
             printf("%s", ns.idToName[i].c_str());
@@ -426,16 +426,11 @@ void typeCheck(const Netlist& ns) {
             case OP_XOR:
             case OP_AND:
             case OP_NAND:
-                //TODO: do bitwise operations for nappes?
-                assert(varNappe == 0 && varNappe == nappe(0) && nappe(0) == nappe(1));
+                assert(varNappe == nappe(0) && nappe(0) == nappe(1));
                 break;
             case OP_NOT:
-                //TODO: do bitwise operations for nappes?
-                assert(varNappe == 0 && varNappe == nappe(0));
-                break;
             case OP_REG:
-                //TODO: do bitwise operations for nappes?
-                assert(varNappe == 0 && varNappe == nappe(0));
+                assert(varNappe == nappe(0));
                 break;
             case OP_RAM:
                 //TODO
@@ -444,16 +439,16 @@ void typeCheck(const Netlist& ns) {
                 //TODO
                 break;
             case OP_MUX:
-                assert(varNappe == nappe(1) && nappe(2) == nappe(1) && nappe(0) == 0);
+                assert(varNappe == nappe(1) && nappe(2) == nappe(1) && nappe(0) == 1);
                 break;
             case OP_SELECT:
-                assert(varNappe == 0 && nappe(1) > c.args[0]);
+                assert(varNappe == 1 && nappe(1) > c.args[0]);
                 break;
             case OP_SLICE:
                 assert(varNappe == c.args[1] - c.args[0] + 1 && nappe(2) > c.args[1]);
                 break;
             case OP_CONCAT:
-                assert(varNappe == nappe(0)+nappe(1) && nappe(0) > 0 && nappe(1) > 0);
+                assert(varNappe == nappe(0)+nappe(1));
                 break;
             case OP_NOP:
             default:

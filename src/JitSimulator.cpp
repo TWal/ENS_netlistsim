@@ -82,11 +82,11 @@ JitSimulator::JitSimulator(const Netlist& ns) :
                 //_vars[c.varId] = (_vars[c.args[2]] >> c.args[0]) & ((1 << (c.args[1]-c.args[0]+1))-1);
                 break;
             case OP_CONCAT:
-                comp.mov(tmp, varToPtr(c.args[0]));
-                comp.shl(tmp, _ns.nappeSizes[c.args[1]]);
-                comp.or_(tmp, varToPtr(c.args[1]));
+                comp.mov(tmp, varToPtr(c.args[1]));
+                comp.shl(tmp, _ns.nappeSizes[c.args[0]]);
+                comp.or_(tmp, varToPtr(c.args[0]));
                 comp.mov(varToPtr(c.varId), tmp);
-                //_vars[c.varId] = (_vars[c.args[0]] << _ns.nappeSizes[c.args[1]]) | _vars[c.args[1]];
+                //_vars[c.varId] = (_vars[c.args[1]] << _ns.nappeSizes[c.args[0]]) | _vars[c.args[0]];
                 break;
         }
     }

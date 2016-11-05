@@ -9,7 +9,7 @@ Netlist parse(const std::string& s) {
     enum TOKENS {
         SINPUT=1, SOUTPUT, SVAR, SIN,
         OOR, OXOR, OAND, ONAND, ONOT,
-        MREG, MRAM, MROM,
+        MREG, MRAM, MROM, MMUX,
         NSELECT, NSLICE, NCONCAT,
         VARNAME, NUMBER,
         COMMA, SEMICOLON, EQUAL, NEWLINE
@@ -29,6 +29,7 @@ Netlist parse(const std::string& s) {
     rules.push("REG", MREG); //var
     rules.push("RAM", MRAM); //int int var var var var
     rules.push("ROM", MROM);
+    rules.push("MUX", MMUX);
     rules.push("SELECT", NSELECT); //int var
     rules.push("SLICE", NSLICE); //int int var
     rules.push("CONCAT", NCONCAT); //var var
@@ -74,6 +75,7 @@ Netlist parse(const std::string& s) {
             case MREG:
             case MRAM:
             case MROM:
+            case MMUX:
             case NSELECT:
             case NSLICE:
             case NCONCAT:
@@ -167,6 +169,8 @@ Netlist parse(const std::string& s) {
                 return OP_RAM;
             case MROM:
                 return OP_ROM;
+            case MMUX:
+                return OP_MUX;
             case NSELECT:
                 return OP_SELECT;
             case NSLICE:
@@ -274,6 +278,15 @@ Netlist parse(const std::string& s) {
                 //???
                 assert(0);
                 break;
+            case OP_MUX:
+                if(v.size() != 6 || v[3].first != VARNAME || v[4].first != VARNAME || v[5].first != VARNAME) {
+                    fprintf(stderr, "Operation has not the right number of arguments...\n");
+                    exit(1);
+                }
+                currentCommand.args.push_back(getId(v[3].second));
+                currentCommand.args.push_back(getId(v[4].second));
+                currentCommand.args.push_back(getId(v[5].second));
+                break;
             case OP_SELECT:
                 if(v.size() != 5 || v[3].first != NUMBER || v[4].first != VARNAME) {
                     fprintf(stderr, "Operation has not the right number of arguments...\n");
@@ -351,6 +364,8 @@ void printNetlist(const Netlist& ns) {
                 return "RAM";
             case OP_ROM:
                 return "ROM";
+            case OP_MUX:
+                return "MUX";
             case OP_SELECT:
                 return "SELECT";
             case OP_SLICE:
@@ -384,6 +399,9 @@ void printNetlist(const Netlist& ns) {
             case OP_ROM:
                 //???
                 assert(0);
+                break;
+            case OP_MUX:
+                printf("%s %s %s\n", ns.idToName[c.args[0]].c_str(), ns.idToName[c.args[1]].c_str(), ns.idToName[c.args[2]].c_str());
                 break;
             case OP_SELECT:
                 printf("%d %s\n", c.args[0], ns.idToName[c.args[1]].c_str());
@@ -424,6 +442,9 @@ void typeCheck(const Netlist& ns) {
                 break;
             case OP_ROM:
                 //TODO
+                break;
+            case OP_MUX:
+                assert(varNappe == nappe(1) && nappe(2) == nappe(1) && nappe(0) == 0);
                 break;
             case OP_SELECT:
                 assert(varNappe == 0 && nappe(1) > c.args[0]);

@@ -14,6 +14,7 @@ JitSimulator::JitSimulator(const Netlist& ns) :
     asmjit::X86GpVar vars = comp.newIntPtr("vars");
     asmjit::X86GpVar oldVars = comp.newIntPtr("oldVars");
     asmjit::X86GpVar tmp = comp.newInt64("tmp");
+    asmjit::X86GpVar tmpMux = comp.newInt64("tmpMux");
     comp.setArg(0, vars);
     comp.setArg(1, oldVars);
 
@@ -58,6 +59,13 @@ JitSimulator::JitSimulator(const Netlist& ns) :
                 break;
             case OP_ROM:
                 //TODO
+                break;
+            case OP_MUX:
+                comp.mov(tmpMux, varToPtr(c.args[0]));
+                comp.mov(tmp, varToPtr(c.args[1]));
+                comp.test(tmpMux, 1);
+                comp.cmove(tmp, varToPtr(c.args[2]));
+                comp.mov(varToPtr(c.varId), tmp);
                 break;
             case OP_SELECT:
                 comp.mov(tmp, varToPtr(c.args[1]));

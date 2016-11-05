@@ -23,6 +23,8 @@ Simulator::Simulator(const Netlist& ns) :
             case OP_ROM:
                 //TODO
                 break;
+            case OP_MUX:
+                adjList[c.varId] = {{ c.args[0], c.args[1], c.args[2] }};
             case OP_SELECT:
                 adjList[c.varId] = {{ c.args[1] }};
                 break;

@@ -16,22 +16,31 @@
     //"_l_5 = AND _l_4 c\n"
 //;
 
+//std::string prog =
+    //"INPUT \n"
+    //"OUTPUT o\n"
+    //"VAR\n"
+    //"_l_2, c, o\n"
+    //"IN\n"
+    //"c = NOT _l_2\n"
+    //"o = REG c\n"
+    //"_l_2 = REG o\n"
+//;
+
 std::string prog =
-    "INPUT \n"
-    "OUTPUT o\n"
+    "INPUT a, b, c\n"
+    "OUTPUT d\n"
     "VAR\n"
-    "_l_2, c, o\n"
+    "a, b:4, c:4, d:4\n"
     "IN\n"
-    "c = NOT _l_2\n"
-    "o = REG c\n"
-    "_l_2 = REG o\n"
+    "d = MUX a b c\n"
 ;
 
 int main() {
     Netlist ns = Parser::parse(prog);
     Parser::typeCheck(ns);
-    //BasicSimulator sim(ns);
-    JitSimulator sim(ns);
+    BasicSimulator sim(ns);
+    //JitSimulator sim(ns);
     //while(true) {
     for(size_t i = 0; i < 10; ++i) {
     //for(size_t i = 0; i < 10000000; ++i) {

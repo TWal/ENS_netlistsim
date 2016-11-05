@@ -32,6 +32,9 @@ void BasicSimulator::simulate() {
             case OP_ROM:
                 //TODO
                 break;
+            case OP_MUX:
+                (*_curVars)[c.varId] = ((*_curVars)[c.args[0]]&1)? (*_curVars)[c.args[1]] : (*_curVars)[c.args[2]];
+                break;
             case OP_SELECT:
                 (*_curVars)[c.varId] = ((*_curVars)[c.args[1]] >> c.args[0]) & 1;
                 break;

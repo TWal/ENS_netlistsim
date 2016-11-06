@@ -1,8 +1,9 @@
 #include "Simulator.h"
 #include <functional>
+#include "Utils.h"
 
-Simulator::Simulator(const Netlist& ns) :
-    _ns(ns), _vars(ns.idToName.size(), 0), _oldVars(_vars), _curVars(&_vars), _curOldVars(&_oldVars) {
+Simulator::Simulator(const Netlist& ns, const std::string& rom) :
+    _ns(ns), _rom(rom), _vars(ns.idToName.size(), 0), _oldVars(_vars), _curVars(&_vars), _curOldVars(&_oldVars) {
     std::vector<std::vector<size_t>> adjList(_ns.idToName.size(), std::vector<size_t>());;
     for(const Command& c : _ns.commands) {
         switch(c.op) {
@@ -21,7 +22,7 @@ Simulator::Simulator(const Netlist& ns) :
                 //TODO
                 break;
             case OP_ROM:
-                //TODO
+                adjList[c.varId] = {{ c.args[2] }};
                 break;
             case OP_MUX:
                 adjList[c.varId] = {{ c.args[0], c.args[1], c.args[2] }};
@@ -77,6 +78,9 @@ Simulator::Simulator(const Netlist& ns) :
         }
     }
     _ns.commands = newCommands;
+}
+
+Simulator::~Simulator() {
 }
 
 void Simulator::endSimulation() {

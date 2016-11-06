@@ -5,7 +5,7 @@
 
 class BasicSimulator : public Simulator {
     public:
-        BasicSimulator(const Netlist& ns);
+        BasicSimulator(const Netlist& ns, const std::string& rom = "");
         virtual void simulate();
 };
 

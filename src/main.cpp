@@ -1,64 +1,103 @@
 #include "Parser.h"
 #include "BasicSimulator.h"
 #include "JitSimulator.h"
+#include "Utils.h"
 
-//std::string prog =
-    //"INPUT a, b, c\n"
-    //"OUTPUT s, r\n"
-    //"VAR\n"
-    //"_l_1 , _l_3 , _l_4 , _l_5 , a, b, c, r, s\n"
-    //"IN\n"
-    //"r = OR _l_3 _l_5\n"
-    //"s = XOR _l_1 c\n"
-    //"_l_1 = XOR a b\n"
-    //"_l_3 = AND a b\n"
-    //"_l_4 = XOR a b\n"
-    //"_l_5 = AND _l_4 c\n"
-//;
+#include <fstream>
+#include <streambuf>
+#include <string>
+#include <getopt.h>
 
-//std::string prog =
-    //"INPUT \n"
-    //"OUTPUT o\n"
-    //"VAR\n"
-    //"_l_2, c, o\n"
-    //"IN\n"
-    //"c = NOT _l_2\n"
-    //"o = REG c\n"
-    //"_l_2 = REG o\n"
-//;
+std::string readFile(const std::string& file) {
+    std::ifstream t(file);
+    std::string s((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+    return s;
+}
 
-std::string prog =
-    "INPUT a, b, c\n"
-    "OUTPUT d\n"
-    "VAR\n"
-    "a, b:4, c:4, d:4\n"
-    "IN\n"
-    "d = MUX a b c\n"
-;
+void readInput(const Netlist& ns, Simulator* sim) {
+    for(size_t i = 0; i < ns.input.size(); ++i) {
+        if(feof(stdin)) {
+            exit(0);
+        }
+        printf("%s = ", ns.idToName[ns.input[i]].c_str());
+        fflush(stdout);
+        size_t cur;
+        scanf("%lu", &cur);
+        sim->setInput(i, cur);
+    }
+}
 
-int main() {
+void printOutput(const Netlist& ns, Simulator* sim) {
+    for(size_t i = 0; i < ns.output.size(); ++i) {
+        size_t maskedOutput = masknbit(sim->getOutput(i), ns.nappeSizes[ns.output[i]]);
+        printf("%s = %lu\n", ns.idToName[ns.output[i]].c_str(), maskedOutput);
+    }
+    printf("\n");
+}
+
+bool has(const std::string& str, char c) {
+    return str.find_first_of(std::string(&c, 1)) != std::string::npos;
+}
+
+int main(int argc, char** argv) {
+    struct {
+        std::string opts;
+        std::string inputFile;
+        std::string rom;
+        size_t ramSize;
+        int nbIter;
+    } opts = {"", "", "", 0, -1};
+    while(true) {
+        static option longOptions[] = {
+            {"input", required_argument, 0, 'i'},
+            {"rom", required_argument, 0, 'r'},
+            {"ramsize", required_argument, 0, 's'},
+            {"jit", no_argument, 0, 'j'}
+        };
+        int optionIndex = 0;
+        int c = getopt_long(argc, argv, "i:r:j", longOptions, &optionIndex);
+        if(c == -1) {
+            break;
+        }
+        opts.opts.push_back(c);
+        switch(c) {
+            case 'i':
+                opts.inputFile = optarg;
+                break;
+            case 'r':
+                opts.rom = optarg;
+                break;
+            default:
+                break;
+        }
+    }
+
+    if(!has(opts.opts, 'i')) {
+        printf("No input netlist given!\n");
+        return 1;
+    }
+    std::string prog = readFile(opts.inputFile);
     Netlist ns = Parser::parse(prog);
     Parser::typeCheck(ns);
-    BasicSimulator sim(ns);
-    //JitSimulator sim(ns);
-    //while(true) {
-    for(size_t i = 0; i < 10; ++i) {
-    //for(size_t i = 0; i < 10000000; ++i) {
-        for(size_t i = 0; i < ns.input.size(); ++i) {
-            if(feof(stdin)) {
-                return 0;
-            }
-            printf("%s = ", ns.idToName[ns.input[i]].c_str());
-            fflush(stdout);
-            size_t cur;
-            scanf("%lu", &cur);
-            sim.setInput(i, cur);
-        }
-        sim.simulate();
-        for(size_t i = 0; i < ns.output.size(); ++i) {
-            printf("%s = %lu\n", ns.idToName[ns.output[i]].c_str(), sim.getOutput(i));
-        }
-        printf("\n");
+
+    std::string rom;
+    if(has(opts.opts, 'r')) {
+        rom = readFile(opts.rom);
     }
+
+    Simulator* sim;
+    if(has(opts.opts, 'j')) {
+        sim = new JitSimulator(ns, rom);
+    } else {
+        sim = new BasicSimulator(ns, rom);
+    }
+
+    while(true) {
+        readInput(ns, sim);
+        sim->simulate();
+        printOutput(ns, sim);
+    }
+
+    delete sim;
     return 0;
 }

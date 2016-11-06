@@ -28,8 +28,8 @@ Netlist parse(const std::string& s) {
     rules.push("NOT", ONOT); //var var
     rules.push("REG", MREG); //var
     rules.push("RAM", MRAM); //int int var var var var
-    rules.push("ROM", MROM);
-    rules.push("MUX", MMUX);
+    rules.push("ROM", MROM); //int int var
+    rules.push("MUX", MMUX); //var var var
     rules.push("SELECT", NSELECT); //int var
     rules.push("SLICE", NSLICE); //int int var
     rules.push("CONCAT", NCONCAT); //var var
@@ -275,8 +275,13 @@ Netlist parse(const std::string& s) {
                 }
                 break;
             case OP_ROM:
-                //???
-                assert(0);
+                if(v.size() != 6 || v[3].first != NUMBER || v[4].first != NUMBER || v[5].first != VARNAME) {
+                    fprintf(stderr, "Operation has not the right number of arguments...\n");
+                    exit(1);
+                }
+                currentCommand.args.push_back(atoi(v[3].second.c_str()));
+                currentCommand.args.push_back(atoi(v[4].second.c_str()));
+                currentCommand.args.push_back(getId(v[5].second));
                 break;
             case OP_MUX:
                 if(v.size() != 6 || v[3].first != VARNAME || v[4].first != VARNAME || v[5].first != VARNAME) {
@@ -394,20 +399,19 @@ void printNetlist(const Netlist& ns) {
                 printf("%s\n", ns.idToName[c.args[0]].c_str());
                 break;
             case OP_RAM:
-                printf("%d %d %s %s %s %s\n", c.args[0], c.args[1], ns.idToName[c.args[2]].c_str(), ns.idToName[c.args[3]].c_str(), ns.idToName[c.args[4]].c_str(), ns.idToName[c.args[5]].c_str());
+                printf("%lu %lu %s %s %s %s\n", c.args[0], c.args[1], ns.idToName[c.args[2]].c_str(), ns.idToName[c.args[3]].c_str(), ns.idToName[c.args[4]].c_str(), ns.idToName[c.args[5]].c_str());
                 break;
             case OP_ROM:
-                //???
-                assert(0);
+                printf("%lu %lu %s\n", c.args[0], c.args[1], ns.idToName[c.args[2]].c_str());
                 break;
             case OP_MUX:
                 printf("%s %s %s\n", ns.idToName[c.args[0]].c_str(), ns.idToName[c.args[1]].c_str(), ns.idToName[c.args[2]].c_str());
                 break;
             case OP_SELECT:
-                printf("%d %s\n", c.args[0], ns.idToName[c.args[1]].c_str());
+                printf("%lu %s\n", c.args[0], ns.idToName[c.args[1]].c_str());
                 break;
             case OP_SLICE:
-                printf("%d %d %s\n", c.args[0], c.args[1], ns.idToName[c.args[2]].c_str());
+                printf("%lu %lu %s\n", c.args[0], c.args[1], ns.idToName[c.args[2]].c_str());
                 break;
         }
     }
@@ -436,7 +440,7 @@ void typeCheck(const Netlist& ns) {
                 //TODO
                 break;
             case OP_ROM:
-                //TODO
+                assert(c.args[0] == nappe(2) && varNappe == c.args[1]);
                 break;
             case OP_MUX:
                 assert(varNappe == nappe(1) && nappe(2) == nappe(1) && nappe(0) == 1);

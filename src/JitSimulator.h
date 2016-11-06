@@ -6,13 +6,13 @@
 
 class JitSimulator : public Simulator {
     public:
-        JitSimulator(const Netlist& ns);
-        ~JitSimulator();
+        JitSimulator(const Netlist& ns, const std::string& rom = "");
+        virtual ~JitSimulator();
         virtual void simulate();
 
     protected:
         asmjit::JitRuntime _runtime;
-        typedef void (*FuncType)(size_t*, size_t*);
+        typedef void (*FuncType)(size_t*, size_t*, const char*);
         FuncType _func;
 };
 

@@ -1,12 +1,14 @@
 #include "BasicSimulator.h"
+#include "Utils.h"
 #include <cassert>
 
-BasicSimulator::BasicSimulator(const Netlist& ns) :
-    Simulator(ns) {
+BasicSimulator::BasicSimulator(const Netlist& ns, const std::string& rom) :
+    Simulator(ns, rom) {
 }
 
 void BasicSimulator::simulate() {
     size_t* vars = _curVars->data();
+    size_t addr;
     for(const Command& c : _ns.commands) {
         switch(c.op) {
             case OP_OR:
@@ -31,7 +33,9 @@ void BasicSimulator::simulate() {
                 //TODO
                 break;
             case OP_ROM:
-                //TODO
+                addr = vars[c.args[2]];
+                assert(addr%8 == 0);
+                vars[c.varId] = *((size_t*)(&_rom[masknbit(addr, _ns.nappeSizes[c.args[2]])/8]));
                 break;
             case OP_MUX:
                 vars[c.varId] = (vars[c.args[0]]&1)? vars[c.args[1]] : vars[c.args[2]];
@@ -40,7 +44,7 @@ void BasicSimulator::simulate() {
                 vars[c.varId] = (vars[c.args[1]] >> c.args[0]) & 1;
                 break;
             case OP_SLICE:
-                vars[c.varId] = (vars[c.args[2]] >> c.args[0]) & ((1 << (c.args[1]-c.args[0]+1))-1);
+                vars[c.varId] = masknbit(vars[c.args[2]] >> c.args[0],c.args[1]-c.args[0]+1);
                 break;
             case OP_CONCAT:
                 vars[c.varId] = (vars[c.args[1]] << _ns.nappeSizes[c.args[0]]) | vars[c.args[0]];

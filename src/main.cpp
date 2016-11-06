@@ -52,10 +52,11 @@ int main(int argc, char** argv) {
             {"input", required_argument, 0, 'i'},
             {"rom", required_argument, 0, 'r'},
             {"ramsize", required_argument, 0, 's'},
+            {"nbiter", required_argument, 0, 'n'},
             {"jit", no_argument, 0, 'j'}
         };
         int optionIndex = 0;
-        int c = getopt_long(argc, argv, "i:r:s:j", longOptions, &optionIndex);
+        int c = getopt_long(argc, argv, "i:r:s:n:j", longOptions, &optionIndex);
         if(c == -1) {
             break;
         }
@@ -69,6 +70,8 @@ int main(int argc, char** argv) {
                 break;
             case 's':
                 opts.ramSize = atoi(optarg);
+            case 'n':
+                opts.nbIter = atoi(optarg);
             default:
                 break;
         }
@@ -94,7 +97,7 @@ int main(int argc, char** argv) {
         sim = new BasicSimulator(ns, rom, opts.ramSize);
     }
 
-    while(true) {
+    for(int i = 0; i < opts.nbIter || opts.nbIter == -1; ++i) {
         readInput(ns, sim);
         sim->simulate();
         printOutput(ns, sim);

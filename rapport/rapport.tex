@@ -1,0 +1,122 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[francais]{babel}
+\usepackage[top=1cm, bottom=2cm, left=2cm, right=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pgfornament}
+
+\newcommand{\sep}{\begin{center} \pgfornament[width=10cm]{88} \end{center}}
+\newcommand{\finish}{\begin{center} \pgfornament[width=5cm]{75} \end{center}}
+
+
+%\linespread{1.1}
+%\setlength{\parskip}{1em plus2mm minus2mm}
+
+\title{Rapport sur le simulateur de netlist}
+\author{Théophile Wallez}
+\date{06/11/2016}
+
+\begin{document}
+
+\maketitle
+
+\section{Spécifications}
+
+\subsection{Déclaration des variables}
+
+Un nom de variable doit être reconnue par l'expression régulière suivante : \verb$[_a-z][_a-z0-9]*$. Un nom de variable peut être suivi de "\verb$:$ $n$" où n indique que la variable est une nappe de fils à $n$ fils. Un fil est assimilé à une nappe de un fil.
+
+Après les mots-clés \verb$INPUT$, \verb$OUTPUT$, \verb$VAR$ il y a une liste de variables séparées par des virgules. Si une taille de nappe est donnée deux fois, la première valeur donnée est prioritaire.
+
+Les variables données après \verb$INPUT$ sont des variables dont la valeur sera demandée à chaque cycle.
+
+Les variables données après \verb$OUTPUT$ sont des variables dont la valeur sera affichée à chaque cycle.
+
+Par la suite, si \verb$a$ est une variable, on va noter $|\verb;a;|$ la taille de sa nappe.
+
+\subsection{Déclaration des portes logiques}
+
+La liste des portes logiques est donnée après le mot-clé \verb$IN$, où chaque ligne contient une porte logique.
+
+\begin{itemize}
+    \item \verb$a = OR b c$ : assigne à \verb$a$ la valeur du "ou" bit à bit de \verb$b$ et \verb$c$. Il est requis que $|\verb;a;| = |\verb;b;| = |\verb;c;|$
+    \item \verb$a = XOR b c$ : pareil, avec une porte "ou exclusif"
+    \item \verb$a = AND b c$ : pareil, avec une porte "et"
+    \item \verb$a = NAND b c$ : pareil, avec une porte "non-et"
+    \item \verb$a = NOT b$ : assigne à \verb$a$ la valeur du "non" bit à bit de \verb$b$. Il est requis que $|\verb;a;| = |\verb;b;|$
+    \item \verb$a = REG b$ : assigne à \verb$a$ la valeur de \verb$b$ au cycle précédent. Au premier cycle, \verb$a = 0$. Il est requis que $|\verb;a;| = |\verb;b;|$
+    \item \verb$a = RAM$ $ad\ w$ \verb$ra we wa d$ : assigne à \verb$a$ les bits de la RAM de l'adresse \verb$ra$ à \verb$ra$$+w-1$ (inclus). Si \verb$we$$ = 1$, les bits de la RAM de l'adresse \verb$wa$ à \verb$wa$$+w-1$ sont assignés à \verb$d$, ce changement étant visible seulement au cycle suivant. Il est requis que $ad = |\verb;ra;| = |\verb;wa;|$, $w = |\verb;a;| = |\verb;d;|$ et $|\verb;we;| = 1$, et que $8$ divise \verb$ra$ et \verb$wa$.
+    \item \verb$a = ROM$ $ad\ w$ \verb$ra$ : assigne à \verb$a$ les bits de la ROM de l'adresse \verb$ra$ à \verb$ra$$+w-1$. Il est requis que $ad = |\verb;ra;|$, $w = |\verb;a;|$, et que $8$ divise \verb$ra$
+    \item \verb$a = MUX b c d$ : si \verb$c$$ = 1$, assigne à \verb$a$ la valeur de \verb$b$, sinon assigne à \verb$a$ la valeur de \verb$d$. Il est requis que $|\verb;a;| = |\verb;c;| = |\verb;d;|$ et $|\verb;b;| = 1$
+    \item \verb$a = SELECT$ $i$ \verb$b$ : assigne à \verb$a$ la valeur du ième bit de \verb$b$ (on compte à partir de $0$). Il est requis que $|\verb;a;| = 1$ et $i < |\verb;b;|$.
+    \item \verb$a = SLICE$ $i\ j$ \verb$b$ : assigne à \verb$a$ les valeurs du ième bit au jème bit de \verb$b$. Il est requis que $i \leq j<|\verb;b;|$, $|\verb;a;| = j-i+1$
+    \item \verb$a = CONCAT b c$ : assigne à \verb$a$ la concaténation des nappes de \verb$b$ et \verb$c$. Les bits de poids faible de \verb$a$ sont ceux de \verb$c$. Il est requis que $|\verb;a;| = |\verb;b;|+|\verb;c;|$
+\end{itemize}
+
+\section{Détails sur l'implémentation \& difficultées rencontrées}
+
+\subsection{Implémentation de l'interpréteur}
+
+J'ai programmé en C++. Le lexer utilise la bibliothèque \verb$lexertl$, et j'ai écrit le parseur à la main.
+Le programme contient en fait deux simulateurs : un interpréteur basique, et un interpréteur faisant de la compilation à la volée en utilisant la bibliothèque \verb$asmjit$, pour plus de performances.
+
+\subsection{Stockage des variables}
+
+Je stocke les variables sur des entiers $64$-bit : cela a pour conséquence que les nappes ne peuvent pas contenir plus de 64 fils.
+J'estime qu'il y aura suffisemment peu de variables pour que ça consomme quand même peu de mémoire, et que ça tienne dans le cache.
+Cela permet d'utiliser directement les opérations bit à bit du \verb$C++$.
+
+Un problème qu'il peut avoir est que certains bits de poids fort qui ne représentent pas la valeur de la nappe soient à $1$ (comme après une porte \verb$NOT$ ou \verb$NAND$).
+Cela fait qu'il faut faire un masque sur les adresses données à la RAM et la ROM, et au bit de sélection de l'instruction \verb$MUX$.
+Concernant \verb$MUX$, ça ne coûte rien de faire le masque (il suffit de faire \verb$testq b, 1$ au lieu de \verb$testq b, b$), mais cela coûte une instruction de plus pour la RAM et la ROM.
+
+\subsection{Calcul des masques}
+
+Pour faire un masque pour les $n$ premiers bits, je faisais $(1<<n)-1$.
+Cela fonctionne correctement pour des petites valeurs de $n$, mais c'est une opération à comportement indéterminé lorsque $n \geq 64$, et c'est un problème lorsque j'ai des nappes de $64$ fils.
+En effet, \verb$g++$ compile le décalage avec \verb$sal$ au lieu de \verb$shl$ ce qui fait que le $1$ retourne au début et alors $1<<64 = 1$. J'ai donc codé une fonction qui prends ce cas particulier en compte.
+
+\subsection{Adresses de la RAM et la ROM}
+
+J'ai décidé de n'accepter que les addresses multiples de $8$ dans la RAM et la ROM. Cela a pour conséquence que je n'ai pas besoin de faire de calculs avec des bitshift et que le code est plus performant. De plus, j'estime que ce n'est pas utile de supporter autre chose que des adresses multiples de $8$.
+
+J'aurais pu demander à ce que l'unité des addresses soit en octet et pas en bit, mais je ne l'ai pas fait afin de rester cohérent avec les simulateurs des personnes avec qui je vais faire le processeur.
+
+La taille du mot n'est pas très importante car je lis $64$ bits dans tous les cas : les bits de poids fort seront de toute façon ignorés si la taille de la nappe est petite.
+
+L'interpréteur basique vérifie que l'adresse est bien un multiple de $8$ (avec un \verb$assert$), tandis que l'interpréteur faisant du JIT ne vérifie pas, il effectue seulement une division par $8$.
+
+\subsection{Endianess}
+
+L'endianess des instructions \verb$RAM$ est \verb$ROM$ est la même que celle de l'ordinateur hôte. Dans la majorité des cas, c'est little-endian (processeurs x86 ou x86-64).
+
+\subsection{Gestion des REG}
+
+J'ai cherché un moyen efficace de gérer les \verb$REG$.
+Une première idée naïve est de se dire qu'il suffit de les simuler au tout début, mais ça ne fonctionne pas car il peut y avoir des cycles : \verb$x = REG y$ et \verb$y = REG x$.
+
+J'ai trouvé plusieurs méthodes pour implémenter ça de façon correcte :
+
+\begin{itemize}
+    \item copier le tableau contenant les variables à chaque cycle
+    \item détecter les cycles d'assignation et les "couper" avec une variable temporaire (comme quand on échange la valeur de deux variables)
+    \item Avoir tout le temps deux tableaux : un qui contient les valeurs des variables au cycle courant, et l'autre les valeurs au cycle précédent, et on alterne leurs rôles à chaque cycle.
+\end{itemize}
+
+J'ai décidé de partir avec la dernière option, en partant du principe qu'il n'y aurait pas beaucoup de variables et que ça ne poserait pas de problème du point de vue du cache. C'est aussi une solution optimale en terme d'instructions exécutées sur le processeur hôte.
+
+\section{Utilisation pratique}
+
+On lance la commande \verb$./bin/NetlistSim$ avec les arguments suivants :
+
+\begin{itemize}
+    \item \verb$-i$ ou \verb$--input$ suivi du nom du fichier contenant la netlist (requis)
+    \item \verb$-r$ ou \verb$--rom$ suivi du nom du fichier contenant la ROM (optionel : par défaut la ROM est vide)
+    \item \verb$-s$ ou \verb$--ramsize$ suivi d'un nombre désignant la taille de la RAM souhaitée (optionel : par défaut 0)
+    \item \verb$-n$ ou \verb$--nbiter$ suivi d'un nombre désignant le nombre d'itération souhaité (optionel : par défaut fait un nombre infini d'itération)
+    \item \verb$-j$ ou \verb$--jit$ active l'utilisation de l'interpréteur JIT
+\end{itemize}
+
+\end{document}

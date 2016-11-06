@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
             {"jit", no_argument, 0, 'j'}
         };
         int optionIndex = 0;
-        int c = getopt_long(argc, argv, "i:r:j", longOptions, &optionIndex);
+        int c = getopt_long(argc, argv, "i:r:s:j", longOptions, &optionIndex);
         if(c == -1) {
             break;
         }
@@ -67,6 +67,8 @@ int main(int argc, char** argv) {
             case 'r':
                 opts.rom = optarg;
                 break;
+            case 's':
+                opts.ramSize = atoi(optarg);
             default:
                 break;
         }
@@ -87,9 +89,9 @@ int main(int argc, char** argv) {
 
     Simulator* sim;
     if(has(opts.opts, 'j')) {
-        sim = new JitSimulator(ns, rom);
+        sim = new JitSimulator(ns, rom, opts.ramSize);
     } else {
-        sim = new BasicSimulator(ns, rom);
+        sim = new BasicSimulator(ns, rom, opts.ramSize);
     }
 
     while(true) {

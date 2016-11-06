@@ -437,7 +437,9 @@ void typeCheck(const Netlist& ns) {
                 assert(varNappe == nappe(0));
                 break;
             case OP_RAM:
-                //TODO
+                //b = ROM ad w ra we wa d
+                //ad = |ra| = |wa|, w = |b| = |d|, |we| = 1
+                assert(c.args[0] == nappe(2) && nappe(2) == nappe(4) && varNappe == c.args[1] && c.args[1] == nappe(5) && nappe(3) == 1);
                 break;
             case OP_ROM:
                 assert(c.args[0] == nappe(2) && varNappe == c.args[1]);

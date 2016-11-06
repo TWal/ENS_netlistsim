@@ -2,8 +2,8 @@
 #include <functional>
 #include "Utils.h"
 
-Simulator::Simulator(const Netlist& ns, const std::string& rom) :
-    _ns(ns), _rom(rom), _vars(ns.idToName.size(), 0), _oldVars(_vars), _curVars(&_vars), _curOldVars(&_oldVars) {
+Simulator::Simulator(const Netlist& ns, const std::string& rom, size_t ramSize) :
+    _ns(ns), _rom(rom), _ram(ramSize, 0), _vars(ns.idToName.size(), 0), _oldVars(_vars), _curVars(&_vars), _curOldVars(&_oldVars) {
     std::vector<std::vector<size_t>> adjList(_ns.idToName.size(), std::vector<size_t>());;
     for(const Command& c : _ns.commands) {
         switch(c.op) {
@@ -19,7 +19,7 @@ Simulator::Simulator(const Netlist& ns, const std::string& rom) :
             case OP_REG:
                 break;
             case OP_RAM:
-                //TODO
+                adjList[c.varId]= {{ c.args[2], c.args[3], c.args[4], c.args[5] }};
                 break;
             case OP_ROM:
                 adjList[c.varId] = {{ c.args[2] }};

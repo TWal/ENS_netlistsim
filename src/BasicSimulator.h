@@ -5,8 +5,10 @@
 
 class BasicSimulator : public Simulator {
     public:
-        BasicSimulator(const Netlist& ns, const std::string& rom = "");
+        BasicSimulator(const Netlist& ns, const std::string& rom = "", size_t ramSize = 0);
         virtual void simulate();
+    protected:
+        std::vector<size_t> _ramInstrId;
 };
 
 #endif

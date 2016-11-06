@@ -2,10 +2,12 @@
 #define SIMULATOR_H
 
 #include "Parser.h"
+#include <string>
+#include <vector>
 
 class Simulator {
     public:
-        Simulator(const Netlist& ns, const std::string& rom = "");
+        Simulator(const Netlist& ns, const std::string& rom = "", size_t ramSize = 0);
         virtual ~Simulator();
         virtual void simulate() = 0;
         inline void setInput(size_t i, size_t val) {
@@ -19,6 +21,7 @@ class Simulator {
         void endSimulation();
         Netlist _ns;
         std::string _rom;
+        std::vector<char> _ram;
         std::vector<size_t> _vars;
         std::vector<size_t> _oldVars;
         std::vector<size_t>* _curVars;
